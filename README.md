@@ -17,8 +17,10 @@ Features:
 How to get it?
 Visit https://angelgtz6249.github.io/UYC and enjoy
 
-Run the following command:
-git clone https://github.com/angelgtz6249/UYC.git
+Run the following command: 
+
+git clone https://github.com/angelgtz6249/UYC.git 
+
 Then open the index.html file and enjoy
 
 Android APK and UWP versions coming soon.
