@@ -14,15 +14,16 @@ Features:
 •Support for over 20 languages
 •Neutral and white color scheme/theme
 
-How to get it?
-Visit https://angelgtz6249.github.io/UYC and enjoy
+How to get it? 
 
-Run the following command: 
+1. Visit https://angelgtz6249.github.io/UYC and enjoy
+
+2. Run the following command: 
 
 git clone https://github.com/angelgtz6249/UYC.git 
 
 Then open the index.html file and enjoy
 
-APK, AppImage, MSI and UWP coming soon
+3. APK, AppImage, MSI and UWP coming soon
 
 A project licensed under Creative Commons Zero 1.0, so you can do whatever you want with it—provided you don't do anything weird; I know you guys.
