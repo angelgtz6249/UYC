@@ -23,6 +23,6 @@ git clone https://github.com/angelgtz6249/UYC.git
 
 Then open the index.html file and enjoy
 
-Android APK and UWP versions coming soon.
+APK, AppImage, MSI and UWP coming soon
 
 A project licensed under Creative Commons Zero 1.0, so you can do whatever you want with it—provided you don't do anything weird; I know you guys.
