@@ -1,0 +1,2174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Client</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* Encabezado superior */
+    header.main-header {
+      background-color: #212121;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #333;
+    }
+
+    .brand-logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .search-container {
+      flex: 1;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 6px 10px;
+      background-color: #ffffff;
+      color: #000000;
+      border: 1px solid #00a2ff;
+      border-radius: 2px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: #777777;
+    }
+
+    .menu-dots-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      padding: 4px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-dots-btn span {
+      width: 4px;
+      height: 4px;
+      background-color: #ffffff;
+      border-radius: 50%;
+    }
+
+    /* Navegación por pestañas */
+    nav.nav-tabs {
+      background-color: #212121;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 10px 12px;
+      gap: 20px;
+      border-bottom: 1px solid #383838;
+      overflow-x: auto;
+    }
+
+    .nav-tab-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: normal;
+      cursor: pointer;
+      white-space: nowrap;
+      padding-bottom: 2px;
+    }
+
+    .nav-tab-btn.active {
+      font-weight: bold;
+      border-bottom: 2px solid #ffffff;
+    }
+
+    /* Contenido principal */
+    main#app-content {
+      flex: 1;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Tarjeta de video */
+    .video-card {
+      background-color: #000000;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .card-top-meta {
+      background-color: #212121;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-pic-container {
+      width: 48px;
+      height: 40px;
+      background-color: #000000;
+      border: 1px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .profile-pic-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-pic-fallback {
+      font-size: 9px;
+      color: #ffffff;
+      text-align: center;
+      line-height: 1.1;
+      padding: 2px;
+    }
+
+    .meta-details {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .meta-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .meta-subtext {
+      font-size: 12px;
+      color: #cccccc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-description-box {
+      background-color: #1a1a1a;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #dddddd;
+      border-top: 1px solid #2a2a2a;
+      line-height: 1.4;
+      max-height: 80px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Área multimedia */
+    .media-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .thumbnail-view {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .thumbnail-title-bg {
+      font-size: 64px;
+      font-weight: 900;
+      color: #ffffff;
+      opacity: 0.9;
+      letter-spacing: -2px;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+    }
+
+    .play-btn-overlay {
+      position: absolute;
+      width: 68px;
+      height: 48px;
+      background-color: #ff0000;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+
+    .play-btn-overlay::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 18px solid #ffffff;
+      margin-left: 4px;
+    }
+
+    .iframe-player {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Botones de acción inferiores */
+    .card-actions {
+      background-color: #212121;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 4px;
+      border-top: 1px solid #333;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+
+    .action-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .action-btn.active-favorite {
+      color: #ffcc00;
+    }
+
+    /* Categorías de Tendencias en Grilla 3x2 */
+    .trending-categories-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 8px;
+      background-color: #212121;
+      margin-bottom: 12px;
+    }
+
+    .category-row-btn {
+      background-color: #2e2e2e;
+      color: #ffffff;
+      border: 1px solid #444;
+      padding: 12px 14px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .category-row-btn.active {
+      background-color: #444444;
+      border-color: #00a2ff;
+    }
+
+    .category-icon {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* Biblioteca y Suscripciones */
+    .subscriptions-section {
+      background-color: #212121;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+
+    .section-header-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      color: #aaaaaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .subscriptions-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    /* Filtros de búsqueda */
+    .search-filter-bar {
+      background-color: #212121;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .filter-badge-btn {
+      background: none;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      padding: 4px 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .advanced-filter-trigger {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    /* Banner y Encabezado del Canal */
+    .channel-banner-frame {
+      width: 100%;
+      height: 120px;
+      background-color: #252525;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .channel-header-card {
+      background-color: #212121;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .channel-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .channel-header-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .channel-header-name:hover {
+      text-decoration: underline;
+      color: #33a0ff;
+    }
+
+    .subscribe-btn {
+      background-color: #cc0000;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .subscribe-btn.subscribed {
+      background-color: #555555;
+      color: #cccccc;
+    }
+
+    /* Ventanas emergentes */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background-color: #282828;
+      color: #ffffff;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 4px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-card.light-theme {
+      background-color: #ffffff;
+      color: #111111;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+      padding-bottom: 8px;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .modal-body {
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .settings-option-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .settings-option-group label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .settings-select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      color: #000;
+    }
+
+    .btn-action-small {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      background-color: #d32f2f;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background-color: #666;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .comment-item {
+      background-color: #202020;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .comment-author {
+      font-weight: bold;
+      color: #4da6ff;
+      margin-bottom: 4px;
+    }
+
+    .share-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .share-option-btn {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .error-container {
+      padding: 30px 16px;
+      text-align: center;
+      color: #ff6666;
+      background-color: #212121;
+      margin: 20px 12px;
+      border: 1px dashed #ff4444;
+    }
+
+    .toggle-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* Diseño horizontal para pantallas grandes */
+    @media (min-width: 768px), (orientation: landscape) and (min-width: 600px) {
+      .video-card {
+        display: grid;
+        grid-template-columns: 42% 58%;
+        grid-template-rows: auto auto 1fr;
+        background-color: #1a1a1a;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #333;
+        margin-bottom: 20px;
+      }
+
+      .card-top-meta {
+        grid-column: 2;
+        grid-row: 1;
+        background-color: #1a1a1a;
+        padding: 12px;
+      }
+
+      .media-frame {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        height: 100%;
+        min-height: 220px;
+      }
+
+      .card-description-box {
+        grid-column: 2;
+        grid-row: 2;
+        background-color: #1a1a1a;
+        border-top: none;
+      }
+
+      .card-actions {
+        grid-column: 2;
+        grid-row: 3;
+        background-color: #1a1a1a;
+        align-self: end;
+        justify-content: flex-start;
+        gap: 16px;
+        padding: 12px;
+        border-top: 1px solid #2a2a2a;
+      }
+
+      header.main-header {
+        padding: 10px 24px;
+      }
+
+      nav.nav-tabs {
+        padding: 12px 24px;
+        justify-content: center;
+        gap: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado Principal -->
+  <header class="main-header">
+    <div class="brand-logo" onclick="navigateTo('inicio')">
+      <span>YouTube</span>
+    </div>
+
+    <div class="search-container">
+      <input type="text" id="global-search-input" class="search-input" placeholder="Buscar..." onkeypress="handleSearchKeyPress(event)">
+    </div>
+
+    <button class="menu-dots-btn" onclick="toggleHeaderMenu()" aria-label="Opciones">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+
+  <!-- Pestañas de Navegación -->
+  <nav class="nav-tabs" id="main-nav-tabs">
+    <button class="nav-tab-btn active" id="tab-inicio" onclick="navigateTo('inicio')">Inicio</button>
+    <button class="nav-tab-btn" id="tab-tendencias" onclick="navigateTo('tendencias')">Tendencias</button>
+    <button class="nav-tab-btn" id="tab-biblioteca" onclick="navigateTo('biblioteca')">Biblioteca</button>
+  </nav>
+
+  <!-- Contenedor Dinámico -->
+  <main id="app-content"></main>
+
+  <!-- Contenedor Modal Global -->
+  <div id="modal-container" style="display: none;"></div>
+
+  <script>
+    /* CLAVE API DE GOOGLE CLOUD */
+    const API_KEY = "AIzaSyC6fHHTGlkndc4wsDgKRinMQUJVwqd-Xo0"; 
+
+    /* DICCIONARIO MULTILENGUAJE CON ZULÚ E INDONESIO */
+    const i18n = {
+      es_MX: {
+        inicio: "Inicio", tendencias: "Tendencias", biblioteca: "Biblioteca", buscar: "Buscar...",
+        favorito: "Favorito", comentarios: "Comentarios", compartir: "Compartir", verEnYoutube: "Ver en YouTube",
+        suscripciones: "Suscripciones", favoritos: "Favoritos", noFavs: "No tienes videos marcados como favoritos.",
+        noSubs: "No hay suscripciones añadidas.", filtrarPor: "Filtrar por", filtrosAvanzados: "Filtros avanzados",
+        suscribirse: "Suscribirse", suscripto: "Suscripto", ayuda: "Ayuda", configuracion: "Configuración",
+        politica: "Política de privacidad", idiomaApp: "Idioma de la aplicación:", historialBusqueda: "Historial de Búsqueda:",
+        borrarHistorial: "Borrar el historial de búsqueda", modoSimulado: "Modo simulado (solo pruebas)",
+        modoSimuladoDesc: "Permite probar la aplicación con datos de prueba generados localmente aunque no haya una Clave API configurada.",
+        miniatura: "Miniatura", errorConexion: "Error de conexión",
+        errorConexionDesc: "No se pudo conectar con YouTube API. Revisa tu Clave API en el código o activa el 'Modo simulado (solo pruebas)' en Configuración.",
+        ahora: "Ahora", musica: "Música", videojuegos: "Videojuegos", shorts: "Shorts", noticias: "Noticias", youtubeKids: "YouTube Kids",
+        siempre: "siempre", hoy: "hoy", estaSemana: "esta semana", esteMes: "este mes", esteAno: "este año",
+        exportarSubs: "Exportar suscripciones", importarSubs: "Importar suscripciones", detallesVideo: "Detalles del video",
+        detallesCanal: "Detalles del canal", region: "Región", fechaNacimiento: "Fecha de creación"
+      },
+      zu: {
+        inicio: "Ekhaya", tendencias: "Okuthrendayo", biblioteca: "Ilabhulali", buscar: "Cinga...",
+        favorito: "Ozithandayo", comentarios: "Imibono", compartir: "Yabelana", verEnYoutube: "Bukela ku-YouTube",
+        suscripciones: "Izikhalazo", favoritos: "Izintandokazi", noFavs: "Awekho amavidiyo ayizintandokazi.",
+        noSubs: "Azikho izikhalazo ezifakwe.", filtrarPor: "Hlunga nge", filtrosAvanzados: "Izihlungi ezithuthukisiwe",
+        suscribirse: "Bhalisa", suscripto: "Ubhalisile", ayuda: "Usizo", configuracion: "Izilungiselelo",
+        politica: "Inqubomgomo yobumfihlo", idiomaApp: "Ulimi lohlelo lokusebenza:", historialBusqueda: "Umlando wokucinga:",
+        borrarHistorial: "Sula umlando wokucinga", modoSimulado: "Imodi elingiswayo",
+        modoSimuladoDesc: "Hlola uhlelo lokusebenza ngedatha yasendaweni.",
+        miniatura: "Isithonjana", errorConexion: "Iphutha lokuxhuma", errorConexionDesc: "Akwaziwanga ukuxhuma ku-API.",
+        ahora: "Manje", musica: "Umculo", videojuegos: "Imidlalo", shorts: "Shorts", noticias: "Izindaba", youtubeKids: "YouTube Kids",
+        siempre: "njalo", hoy: "namhlanje", estaSemana: "kule viki", esteMes: "kuyo le nyanga", esteAno: "kulolu nyaka",
+        exportarSubs: "Khipha izikhalazo", importarSubs: "Ngenisa izikhalazo", detallesVideo: "Imininingwane yevidiyo",
+        detallesCanal: "Imininingwane yesiteshi", region: "Isifunda", fechaNacimiento: "Usuku lokudalwa"
+      },
+      id: {
+        inicio: "Beranda", tendencias: "Trending", biblioteca: "Koleksi", buscar: "Telusuri...",
+        favorito: "Favorit", comentarios: "Komentar", compartir: "Bagikan", verEnYoutube: "Tonton di YouTube",
+        suscripciones: "Subskripsi", favoritos: "Favorit", noFavs: "Tidak ada video favorit.",
+        noSubs: "Belum ada subskripsi.", filtrarPor: "Filter menurut", filtrosAvanzados: "Filter lanjutan",
+        suscribirse: "Subskribi", suscripto: "Tersubskripsi", ayuda: "Bantuan", configuracion: "Setelan",
+        politica: "Kebijakan Privasi", idiomaApp: "Bahasa aplikasi:", historialBusqueda: "Historis penelusuran:",
+        borrarHistorial: "Hapus historis penelusuran", modoSimulado: "Mode simulasi",
+        modoSimuladoDesc: "Uji aplikasi dengan data lokal.",
+        miniatura: "Gambar mini", errorConexion: "Kesalahan Koneksi", errorConexionDesc: "Gagal terhubung ke YouTube API.",
+        ahora: "Sekarang", musica: "Musik", videojuegos: "Game", shorts: "Shorts", noticias: "Berita", youtubeKids: "YouTube Kids",
+        siempre: "sepanjang waktu", hoy: "hari ini", estaSemana: "minggu ini", esteMes: "bulan ini", esteAno: "tahun ini",
+        exportarSubs: "Ekspor subskripsi", importarSubs: "Impor subskripsi", detallesVideo: "Detail video",
+        detallesCanal: "Detail saluran", region: "Wilayah", fechaNacimiento: "Tanggal pembuatan"
+      },
+      af: {
+        inicio: "Tuiste", tendencias: "Gewild", biblioteca: "Biblioteek", buscar: "Soek...",
+        favorito: "Gunsteling", comentarios: "Kommentaar", compartir: "Deel", verEnYoutube: "Kyk op YouTube",
+        suscripciones: "Inskrywings", favoritos: "Gunstelinge", noFavs: "Geen gunsteling video's nie.",
+        noSubs: "Geen inskrywings bygevoeg nie.", filtrarPor: "Filter volgens", filtrosAvanzados: "Gevorderde filters",
+        suscribirse: "Teken in", suscripto: "Ingeteken", ayuda: "Hulp", configuracion: "Instellings",
+        politica: "Privaatheidsbeleid", idiomaApp: "App-taal:", historialBusqueda: "Soekgeskiedenis:",
+        borrarHistorial: "Vee soekgeskiedenis uit", modoSimulado: "Gestimuleerde modus",
+        modoSimuladoDesc: "Toets die toepassing met plaaslike data.",
+        miniatura: "Prentjie", errorConexion: "Verbindingsfout", errorConexionDesc: "Kon nie koppel nie.",
+        ahora: "Nou", musica: "Musiek", videojuegos: "Speletjies", shorts: "Shorts", noticias: "Nuus", youtubeKids: "YouTube Kids",
+        siempre: "altyd", hoy: "vandag", estaSemana: "hierdie week", esteMes: "hierdie maand", esteAno: "hierdie jaar",
+        exportarSubs: "Voer inskrywings uit", importarSubs: "Voer inskrywings in", detallesVideo: "Video-besonderhede",
+        detallesCanal: "Kanaal-besonderhede", region: "Streek", fechaNacimiento: "Skeppingsdatum"
+      },
+      ca: {
+        inicio: "Inici", tendencias: "Tendències", biblioteca: "Biblioteca", buscar: "Cercar...",
+        favorito: "Favorit", comentarios: "Comentaris", compartir: "Compartir", verEnYoutube: "Veure a YouTube",
+        suscripciones: "Subscripcions", favoritos: "Favorits", noFavs: "No tens vídeos favorits.",
+        noSubs: "Cap subscripció afegida.", filtrarPor: "Filtrar per", filtrosAvanzados: "Filtres avançats",
+        suscribirse: "Subscriure's", suscripto: "Subscrit", ayuda: "Ajuda", configuracion: "Configuració",
+        politica: "Política de privadesa", idiomaApp: "Idioma de l'aplicació:", historialBusqueda: "Historial de cerca:",
+        borrarHistorial: "Netejar historial de cerca", modoSimulat: "Mode simulat",
+        modoSimuladoDesc: "Permet provar l'aplicació amb dades locals.",
+        miniatura: "Miniatura", errorConexion: "Error de connexió", errorConexionDesc: "No s'ha pogut connectar.",
+        ahora: "Ara", musica: "Música", videojuegos: "Videojocs", shorts: "Shorts", noticias: "Notícies", youtubeKids: "YouTube Kids",
+        siempre: "sempre", hoy: "avui", estaSemana: "aquesta setmana", esteMes: "aquest mes", esteAno: "aquest any",
+        exportarSubs: "Exportar subscripcions", importarSubs: "Importar subscripcions", detallesVideo: "Detalls del vídeo",
+        detallesCanal: "Detalls del canal", region: "Regió", fechaNacimiento: "Data de creació"
+      },
+      nah: {
+        inicio: "Peualiztli", tendencias: "Tlen cuali", biblioteca: "Amoxcalli", buscar: "Tatemoa...",
+        favorito: "Tlen nechpactia", comentarios: "Tlatolli", compartir: "Xicmomaqui", verEnYoutube: "Xitta ipan YouTube",
+        suscripciones: "Netlahpaloliztli", favoritos: "Tlen noaxca", noFavs: "Amo onca video tlen mitzpactia.",
+        noSubs: "Amo onca netlahpaloliztli.", filtrarPor: "Xicnequi por", filtrosAvanzados: "Tlen ocseki filtros",
+        suscribirse: "Ximotlalia", suscripto: "Omochiuh", ayuda: "Tlapalewiztli", configuracion: "Tlayeyecoliztli",
+        politica: "Ixtlamatiliztli", idiomaApp: "Tlatolli:", historialBusqueda: "Tlahcuilolli tatemoliztli:",
+        borrarHistorial: "Xicpolo tatemoliztli", modoSimulado: "Yeyecoliztli mode",
+        modoSimuladoDesc: "Xicyejyecomani nican.",
+        miniatura: "Tlacaquiliztli", errorConexion: "Amo cuali netlahpaloliztli", errorConexionDesc: "Amo onca netlahpaloliztli.",
+        ahora: "Axcan", musica: "Cuicatl", videojuegos: "Mahuiltiliztli", shorts: "Shorts", noticias: "Tlanonotzaliztli", youtubeKids: "YouTube Kids",
+        siempre: "mochipa", hoy: "axcan tonalli", estaSemana: "in semanahuac", esteMes: "in metztli", esteAno: "in xihuitl",
+        exportarSubs: "Xiquiquisa netlahpaloliztli", importarSubs: "Xicalaqui netlahpaloliztli", detallesVideo: "Video ixnetitlan",
+        detallesCanal: "Canal ixnetitlan", region: "Tlalli", fechaNacimiento: "Tonalli tlacatiliztli"
+      },
+      pl: {
+        inicio: "Główna", tendencias: "Na czasie", biblioteca: "Biblioteka", buscar: "Szukaj...",
+        favorito: "Ulubione", comentarios: "Komentarze", compartir: "Udostępnij", verEnYoutube: "Oglądaj w YouTube",
+        suscripciones: "Subskrypcje", favoritos: "Ulubione", noFavs: "Brak ulubionych filmów.",
+        noSubs: "Brak subskrypcji.", filtrarPor: "Filtruj według", filtrosAvanzados: "Zaawansowane mecze",
+        suscribirse: "Subskrypuj", suscripto: "Subskrybujesz", ayuda: "Pomoc", configuracion: "Ustawienia",
+        politica: "Polityka prywatności", idiomaApp: "Język aplikacji:", historialBusqueda: "Historia wyszukiwania:",
+        borrarHistorial: "Wyczyść historię wyszukiwania", modoSimulado: "Tryb symulowany",
+        modoSimuladoDesc: "Testuj aplikację z lokalnymi danymi.",
+        miniatura: "Miniatura", errorConexion: "Błąd połączenia", errorConexionDesc: "Nie można połączyć z API.",
+        ahora: "Teraz", musica: "Muzyka", videojuegos: "Gry", shorts: "Shorts", noticias: "Wiadomości", youtubeKids: "YouTube Kids",
+        siempre: "zawsze", hoy: "dzisiaj", estaSemana: "w tym tygodniu", esteMes: "w tym miesiącu", esteAno: "w tym roku",
+        exportarSubs: "Eksportuj subskrypcje", importarSubs: "Importuj subskrypcje", detallesVideo: "Szczegóły filmu",
+        detallesCanal: "Szczegóły kanału", region: "Region", fechaNacimiento: "Data utworzenia"
+      },
+      tl: {
+        inicio: "Tahanan", tendencias: "Umuuso", biblioteca: "Aklatan", buscar: "Maghanap...",
+        favorito: "Paborito", comentarios: "Mga Komento", compartir: "Ibahagi", verEnYoutube: "Panoorin sa YouTube",
+        suscripciones: "Mga Subscription", favoritos: "Mga Paborito", noFavs: "Walang paboritong video.",
+        noSubs: "Walang naidagdag na subscription.", filtrarPor: "I-filter ayon sa", filtrosAvanzados: "Matalas na filter",
+        suscribirse: "Mag-subscribe", suscripto: "Naka-subscribe", ayuda: "Tulong", configuracion: "Mga Setting",
+        politica: "Patakaran sa Privacy", idiomaApp: "Wika ng app:", historialBusqueda: "Kasaysayan ng paghahanap:",
+        borrarHistorial: "Burahin ang kasaysayan", modoSimulado: "Simulated Mode",
+        modoSimuladoDesc: "Subukan ang app sa lokal na data.",
+        miniatura: "Miniature", errorConexion: "Koneksyon sa Error", errorConexionDesc: "Hindi makakonekta sa API.",
+        ahora: "Ngayon", musica: "Musika", videojuegos: "Laro", shorts: "Shorts", noticias: "Balita", youtubeKids: "YouTube Kids",
+        siempre: "palagi", hoy: "ngayong araw", estaSemana: "ngayong linggo", esteMes: "ngayong buwan", esteAno: "ngayong taon",
+        exportarSubs: "I-export ang mga subscription", importarSubs: "I-import ang mga subscription", detallesVideo: "Mga detalye ng video",
+        detallesCanal: "Mga detalye ng channel", region: "Rehiyon", fechaNacimiento: "Petsa ng paggawa"
+      },
+      tr: {
+        inicio: "Ana Sayfa", tendencias: "Trendler", biblioteca: "Kitaplık", buscar: "Ara...",
+        favorito: "Favori", comentarios: "Yorumlar", compartir: "Paylaş", verEnYoutube: "YouTube'da İzle",
+        suscripciones: "Abonelikler", favoritos: "Favoriler", noFavs: "Favori video bulunamadı.",
+        noSubs: "Abonelik eklenmedi.", filtrarPor: "Filtrele", filtrosAvanzados: "Gelişmiş filtreler",
+        suscribirse: "Abone Ol", suscripto: "Abone Olundu", ayuda: "Yardım", configuracion: "Ayarlar",
+        politica: "Gizlilik Politikası", idiomaApp: "Uygulama Dili:", historialBusqueda: "Arama Geçmişi:",
+        borrarHistorial: "Arama geçmişini temizle", modoSimulado: "Simülasyon Modu",
+        modoSimuladoDesc: "Uygulamayı yerel verilerle test edin.",
+        miniatura: "Küçük resim", errorConexion: "Bağlantı Hatası", errorConexionDesc: "YouTube API ile bağlantı kurulamadı.",
+        ahora: "Şimdi", musica: "Müzik", videojuegos: "Oyun", shorts: "Shorts", noticias: "Haberler", youtubeKids: "YouTube Kids",
+        siempre: "her zaman", hoy: "bugün", estaSemana: "bu hafta", esteMes: "bu ay", esteAno: "bu yıl",
+        exportarSubs: "Abonelikleri dışa aktar", importarSubs: "Abonelikleri içe aktar", detallesVideo: "Video detayları",
+        detallesCanal: "Kanal detayları", region: "Bölge", fechaNacimiento: "Oluşturulma tarihi"
+      },
+      sv: {
+        inicio: "Hem", tendencias: "Trendigt", biblioteca: "Bibliotek", buscar: "Sök...",
+        favorito: "Favorit", comentarios: "Kommentarer", compartir: "Dela", verEnYoutube: "Titta på YouTube",
+        suscripciones: "Prenumerationer", favoritos: "Favoriter", noFavs: "Inga favoritvideor sparade.",
+        noSubs: "Inga prenumerationer tillagda.", filtrarPor: "Filtrera efter", filtrosAvanzados: "Avancerade filter",
+        suscribirse: "Prenumerera", suscripto: "Prenumererar", ayuda: "Hjälp", configuracion: "Inställningar",
+        politica: "Integritetspolicy", idiomaApp: "Appspråk:", historialBusqueda: "Sökhistorik:",
+        borrarHistorial: "Rensa sökhistorik", modoSimulado: "Simulerat läge",
+        modoSimuladoDesc: "Testa appen med lokal data.",
+        miniatura: "Miniatyr", errorConexion: "Anslutningsfel", errorConexionDesc: "Kunde inte ansluta till API.",
+        ahora: "Nu", musica: "Musik", videojuegos: "Gaming", shorts: "Shorts", noticias: "Nyheter", youtubeKids: "YouTube Kids",
+        siempre: "alltid", hoy: "idag", estaSemana: "denna vecka", esteMes: "denna månad", esteAno: "i år",
+        exportarSubs: "Exportera prenumerationer", importarSubs: "Importera prenumerationer", detallesVideo: "Videodetaljer",
+        detallesCanal: "Kanaldetaljer", region: "Region", fechaNacimiento: "Skapandedatum"
+      },
+      en_US: {
+        inicio: "Home", tendencias: "Trending", biblioteca: "Library", buscar: "Search...",
+        favorito: "Favorite", comentarios: "Comments", compartir: "Share", verEnYoutube: "Watch on YouTube",
+        suscripciones: "Subscriptions", favoritos: "Favorites", noFavs: "You have no favorite videos.",
+        noSubs: "No subscriptions added.", filtrarPor: "Filter by", filtrosAvanzados: "Advanced filters",
+        suscribirse: "Subscribe", suscripto: "Subscribed", ayuda: "Help", configuracion: "Settings",
+        politica: "Privacy Policy", idiomaApp: "App language:", historialBusqueda: "Search History:",
+        borrarHistorial: "Clear search history", modoSimulado: "Simulated mode (tests only)",
+        modoSimuladoDesc: "Allows testing the app with locally generated mock data.",
+        miniatura: "Thumbnail", errorConexion: "Connection Error",
+        errorConexionDesc: "Could not connect to YouTube API.",
+        ahora: "Now", musica: "Music", videojuegos: "Gaming", shorts: "Shorts", noticias: "News", youtubeKids: "YouTube Kids",
+        siempre: "all time", hoy: "today", estaSemana: "this week", esteMes: "this month", esteAno: "this year",
+        exportarSubs: "Export subscriptions", importarSubs: "Import subscriptions", detallesVideo: "Video details",
+        detallesCanal: "Channel details", region: "Region", fechaNacimiento: "Creation date"
+      }
+    };
+
+    const state = {
+      currentPage: 'inicio',
+      simulatedMode: false,
+      language: 'es_MX',
+      searchHistory: [],
+      favorites: [],
+      subscriptions: [],
+      trendingCategory: 'ahora',
+      searchFilter: 'siempre',
+      searchAdvancedFilters: { order: 'relevance', duration: 'any', type: 'video' },
+      currentSearchQuery: '',
+      currentChannelId: null,
+      currentChannelName: '',
+      currentChannelThumb: '',
+      currentChannelBanner: '',
+      currentChannelDescription: '',
+      channelAvatarsCache: {},
+      currentlyPlayingFrame: null
+    };
+
+    function getTranslation(key) {
+      const dict = i18n[state.language] || i18n['es_MX'];
+      return dict[key] || i18n['es_MX'][key] || key;
+    }
+
+    function generateMockVideos(count = 20, prefix = 'Video') {
+      const mockChannels = [
+        { id: 'ch_1', name: 'Canal Gamer FX' },
+        { id: 'ch_2', name: 'Música & Ritmos' },
+        { id: 'ch_3', name: 'Noticias Globales' },
+        { id: 'ch_4', name: 'Tech Master 2026' },
+        { id: 'ch_5', name: 'Cultura Popular' }
+      ];
+
+      const videos = [];
+      for (let i = 1; i <= count; i++) {
+        const ch = mockChannels[i % mockChannels.length];
+        videos.push({
+          id: `mock_vid_${prefix}_${i}`,
+          title: `${prefix} ${i}: Demostración de Contenido`,
+          description: 'Esta es una descripción detallada de ejemplo generada para el modo simulado de prueba.',
+          channelId: ch.id,
+          channelTitle: ch.name,
+          publishedAt: '2026-08-21',
+          formattedDate: '21/8/2026',
+          views: (i * 1420).toLocaleString(),
+          likes: (i * 120).toLocaleString(),
+          duration: '00:02:19',
+          thumbnailUrl: '',
+          embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1',
+          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        });
+      }
+      return videos;
+    }
+
+    window.onload = function() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+      }
+      loadStateFromStorage();
+      updateStaticUIText();
+      renderPage();
+    };
+
+    function loadStateFromStorage() {
+      try {
+        const savedFavs = localStorage.getItem('yt_client_favs');
+        if (savedFavs) state.favorites = JSON.parse(savedFavs);
+
+        const savedSubs = localStorage.getItem('yt_client_subs');
+        if (savedSubs) state.subscriptions = JSON.parse(savedSubs);
+
+        const savedHist = localStorage.getItem('yt_client_history');
+        if (savedHist) state.searchHistory = JSON.parse(savedHist);
+
+        const savedSimMode = localStorage.getItem('yt_client_simulated_mode');
+        if (savedSimMode !== null) state.simulatedMode = JSON.parse(savedSimMode);
+
+        const savedLang = localStorage.getItem('yt_client_lang');
+        if (savedLang) state.language = savedLang;
+      } catch (e) {
+        console.error('Error al cargar datos:', e);
+      }
+    }
+
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem('yt_client_favs', JSON.stringify(state.favorites));
+        localStorage.setItem('yt_client_subs', JSON.stringify(state.subscriptions));
+        localStorage.setItem('yt_client_history', JSON.stringify(state.searchHistory));
+        localStorage.setItem('yt_client_simulated_mode', JSON.stringify(state.simulatedMode));
+        localStorage.setItem('yt_client_lang', JSON.stringify(state.language));
+      } catch (e) {
+        console.error('Error al guardar datos:', e);
+      }
+    }
+
+    function updateStaticUIText() {
+      document.getElementById('tab-inicio').textContent = getTranslation('inicio');
+      document.getElementById('tab-tendencias').textContent = getTranslation('tendencias');
+      document.getElementById('tab-biblioteca').textContent = getTranslation('biblioteca');
+      document.getElementById('global-search-input').placeholder = getTranslation('buscar');
+    }
+
+    function navigateTo(page, params = {}) {
+      state.currentPage = page;
+      state.currentlyPlayingFrame = null;
+      
+      const navTabs = document.getElementById('main-nav-tabs');
+      if (page === 'busqueda' || page === 'canal') {
+        navTabs.style.display = 'none';
+      } else {
+        navTabs.style.display = 'flex';
+      }
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeTab = document.getElementById(`tab-${page}`);
+      if (activeTab) activeTab.classList.add('active');
+
+      if (params.channelId) {
+        state.currentChannelId = params.channelId;
+        state.currentChannelName = params.channelName || 'Nombre del canal';
+        state.currentChannelThumb = params.channelThumb || '';
+        state.currentChannelBanner = params.channelBanner || '';
+        state.currentChannelDescription = params.channelDescription || '';
+      }
+
+      renderPage();
+    }
+
+    function renderPage() {
+      updateStaticUIText();
+      const container = document.getElementById('app-content');
+      container.innerHTML = '';
+
+      if (state.currentPage === 'inicio') {
+        renderInicioPage(container);
+      } else if (state.currentPage === 'tendencias') {
+        renderTendenciasPage(container);
+      } else if (state.currentPage === 'biblioteca') {
+        renderBibliotecaPage(container);
+      } else if (state.currentPage === 'busqueda') {
+        renderBusquedaPage(container);
+      } else if (state.currentPage === 'canal') {
+        renderCanalPage(container);
+      }
+    }
+
+    /* 1. PAGINA INICIO */
+    async function renderInicioPage(container) {
+      if (!state.simulatedMode && (!API_KEY || API_KEY === "INSERTA_TU_CLAVE_API_AQUI")) {
+        renderConnectionError(container);
+        return;
+      }
+
+      let videos = [];
+      if (state.simulatedMode) {
+        videos = generateMockVideos(15, 'Video Principal');
+      } else {
+        videos = await fetchYouTubeVideos('mostPopular', 50);
+      }
+
+      if (!videos) {
+        renderConnectionError(container);
+        return;
+      }
+
+      videos.forEach(video => {
+        container.appendChild(createVideoCardElement(video));
+      });
+    }
+
+    /* 2. PAGINA TENDENCIAS EN GRILLA 3x2 CON YOUTUBE KIDS */
+    async function renderTendenciasPage(container) {
+      const catBox = document.createElement('div');
+      catBox.className = 'trending-categories-grid';
+      
+      const categories = [
+        { id: 'ahora', label: getTranslation('ahora'), badge: 'Top 10' },
+        { id: 'musica', label: getTranslation('musica'), icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>' },
+        { id: 'videojuegos', label: getTranslation('videojuegos'), icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>' },
+        { id: 'shorts', label: getTranslation('shorts'), icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.77 10.32l-1.2-.5L18 8.06c1.84-1.28 2.29-3.76 1.01-5.6-1.28-1.84-3.76-2.29-5.6-1.01l-7 4.88C4.9 7.42 4.19 9.24 4.5 11.08c.31 1.84 1.58 3.35 3.32 3.92l1.2.5L7.5 17.02c-1.84 1.28-2.29 3.76-1.01 5.6 1.28 1.84 3.76 2.29 5.6 1.01l7-4.88c1.51-1.09 2.22-2.91 1.91-4.75-.31-1.84-1.58-3.35-3.23-3.68zM10 14.5v-5l4.5 2.5-4.5 2.5z"/></svg>' },
+        { id: 'noticias', label: getTranslation('noticias'), icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1zm-3-9H8v2h8V9zm0 4H8v2h8v-2z"/></svg>' },
+        { id: 'kids', label: getTranslation('youtubeKids'), icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H7c-2.21 0-4 1.79-4 4v5c0 2.21 1.79 4 4 4h10c2.21 0 4-1.79 4-4v-5c0-2.21-1.79-4-4-4zm-5 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm7-9H5c-.55 0-1 .45-1 1s.45 1 1 1h14c.55 0 1-.45 1-1s-.45-1-1-1z"/></svg>' }
+      ];
+
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `category-row-btn ${state.trendingCategory === cat.id ? 'active' : ''}`;
+        btn.onclick = () => {
+          state.trendingCategory = cat.id;
+          renderPage();
+        };
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = cat.label;
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'category-icon';
+        if (cat.badge) {
+          iconDiv.textContent = cat.badge;
+          iconDiv.style.fontSize = '12px';
+        } else {
+          iconDiv.innerHTML = cat.icon;
+        }
+
+        btn.appendChild(titleSpan);
+        btn.appendChild(iconDiv);
+        catBox.appendChild(btn);
+      });
+
+      container.appendChild(catBox);
+
+      if (!state.simulatedMode && (!API_KEY || API_KEY === "INSERTA_TU_CLAVE_API_AQUI")) {
+        renderConnectionError(container);
+        return;
+      }
+
+      let videos = [];
+      if (state.simulatedMode) {
+        videos = generateMockVideos(10, `Tendencias (${getTranslation(state.trendingCategory)})`);
+      } else {
+        videos = await fetchYouTubeVideos('trending', 30, state.trendingCategory);
+      }
+
+      if (!videos) {
+        renderConnectionError(container);
+        return;
+      }
+
+      videos.forEach(video => {
+        container.appendChild(createVideoCardElement(video));
+      });
+    }
+
+    /* 3. PAGINA BIBLIOTECA */
+    function renderBibliotecaPage(container) {
+      const subSection = document.createElement('div');
+      subSection.className = 'subscriptions-section';
+
+      const headerFlex = document.createElement('div');
+      headerFlex.className = 'section-header-flex';
+
+      const subLabel = document.createElement('div');
+      subLabel.className = 'section-label';
+      subLabel.textContent = getTranslation('suscripciones');
+
+      const actionBtns = document.createElement('div');
+      actionBtns.style.display = 'flex';
+      actionBtns.style.gap = '6px';
+
+      const expBtn = document.createElement('button');
+      expBtn.className = 'btn-action-small';
+      expBtn.textContent = getTranslation('exportarSubs');
+      expBtn.onclick = exportSubscriptionsJSON;
+
+      const impBtn = document.createElement('button');
+      impBtn.className = 'btn-action-small';
+      impBtn.textContent = getTranslation('importarSubs');
+      impBtn.onclick = triggerImportSubscriptions;
+
+      actionBtns.appendChild(expBtn);
+      actionBtns.appendChild(impBtn);
+
+      headerFlex.appendChild(subLabel);
+      headerFlex.appendChild(actionBtns);
+      subSection.appendChild(headerFlex);
+
+      const scrollBox = document.createElement('div');
+      scrollBox.className = 'subscriptions-scroll';
+
+      if (state.subscriptions.length === 0) {
+        const emptySub = document.createElement('div');
+        emptySub.style.fontSize = '12px';
+        emptySub.style.color = '#888';
+        emptySub.style.padding = '8px';
+        emptySub.textContent = getTranslation('noSubs');
+        scrollBox.appendChild(emptySub);
+      } else {
+        state.subscriptions.forEach(sub => {
+          const item = document.createElement('div');
+          item.className = 'profile-pic-container';
+          item.title = sub.name;
+          item.onclick = () => {
+            navigateTo('canal', { channelId: sub.id, channelName: sub.name, channelThumb: sub.thumbnail });
+          };
+
+          if (sub.thumbnail) {
+            const img = document.createElement('img');
+            img.src = sub.thumbnail;
+            item.appendChild(img);
+          } else {
+            const fallback = document.createElement('div');
+            fallback.className = 'profile-pic-fallback';
+            fallback.textContent = 'Foto de perfil';
+            item.appendChild(fallback);
+          }
+          scrollBox.appendChild(item);
+        });
+      }
+
+      subSection.appendChild(scrollBox);
+      container.appendChild(subSection);
+
+      const favHeader = document.createElement('div');
+      favHeader.className = 'subscriptions-section';
+      favHeader.style.marginBottom = '0';
+      const favLabel = document.createElement('div');
+      favLabel.className = 'section-label';
+      favLabel.textContent = getTranslation('favoritos');
+      favHeader.appendChild(favLabel);
+      container.appendChild(favHeader);
+
+      if (state.favorites.length === 0) {
+        const emptyFav = document.createElement('div');
+        emptyFav.style.padding = '20px';
+        emptyFav.style.textAlign = 'center';
+        emptyFav.style.color = '#aaaaaa';
+        emptyFav.textContent = getTranslation('noFavs');
+        container.appendChild(emptyFav);
+      } else {
+        state.favorites.forEach(video => {
+          container.appendChild(createVideoCardElement(video));
+        });
+      }
+    }
+
+    function exportSubscriptionsJSON() {
+      if (state.subscriptions.length === 0) {
+        alert('No hay suscripciones para exportar.');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.subscriptions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "youtube_subscriptions.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function triggerImportSubscriptions() {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.json';
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const imported = JSON.parse(evt.target.result);
+            if (Array.isArray(imported)) {
+              state.subscriptions = imported;
+              saveStateToStorage();
+              renderPage();
+              alert('Suscripciones importadas con éxito.');
+            } else {
+              alert('Formato de archivo JSON inválido.');
+            }
+          } catch (err) {
+            alert('Error al procesar el archivo JSON.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      fileInput.click();
+    }
+
+    /* 4. PAGINA BÚSQUEDA */
+    async function renderBusquedaPage(container) {
+      const filterBar = document.createElement('div');
+      filterBar.className = 'search-filter-bar';
+
+      const filterBtn = document.createElement('button');
+      filterBtn.className = 'filter-badge-btn';
+      filterBtn.textContent = `${getTranslation('filtrarPor')}: ${getFilterLabel(state.searchFilter)}`;
+      filterBtn.onclick = cycleSearchFilter;
+
+      const advFilterBtn = document.createElement('button');
+      advFilterBtn.className = 'advanced-filter-trigger';
+      advFilterBtn.textContent = getTranslation('filtrosAvanzados');
+      advFilterBtn.onclick = openAdvancedFiltersModal;
+
+      filterBar.appendChild(filterBtn);
+      filterBar.appendChild(advFilterBtn);
+      container.appendChild(filterBar);
+
+      if (!state.simulatedMode && (!API_KEY || API_KEY === "INSERTA_TU_CLAVE_API_AQUI")) {
+        renderConnectionError(container);
+        return;
+      }
+
+      let videos = [];
+      if (state.simulatedMode) {
+        videos = generateMockVideos(20, `Búsqueda: ${state.currentSearchQuery || 'General'}`);
+      } else {
+        videos = await fetchYouTubeVideos('search', 50, state.currentSearchQuery);
+      }
+
+      if (!videos) {
+        renderConnectionError(container);
+        return;
+      }
+
+      if (videos.length === 0) {
+        const noRes = document.createElement('div');
+        noRes.style.padding = '30px';
+        noRes.style.textAlign = 'center';
+        noRes.style.color = '#888';
+        noRes.textContent = 'No se encontraron resultados.';
+        container.appendChild(noRes);
+        return;
+      }
+
+      videos.forEach(video => {
+        container.appendChild(createVideoCardElement(video));
+      });
+    }
+
+    function getFilterLabel(filterKey) {
+      const map = {
+        'siempre': getTranslation('siempre'),
+        'hoy': getTranslation('hoy'),
+        'esta semana': getTranslation('estaSemana'),
+        'este mes': getTranslation('esteMes'),
+        'este año': getTranslation('esteAno')
+      };
+      return map[filterKey] || filterKey;
+    }
+
+    function cycleSearchFilter() {
+      const filters = ['siempre', 'hoy', 'esta semana', 'este mes', 'este año'];
+      const idx = filters.indexOf(state.searchFilter);
+      state.searchFilter = filters[(idx + 1) % filters.length];
+      renderPage();
+    }
+
+    function openAdvancedFiltersModal() {
+      const modal = createModal(getTranslation('filtrosAvanzados'));
+      
+      const content = document.createElement('div');
+      content.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="display:block; margin-bottom:4px; font-weight:bold;">Ordenar por:</label>
+            <select id="adv-order" class="settings-select">
+              <option value="relevance" ${state.searchAdvancedFilters.order === 'relevance' ? 'selected' : ''}>Relevancia</option>
+              <option value="date" ${state.searchAdvancedFilters.order === 'date' ? 'selected' : ''}>Fecha de subida</option>
+              <option value="viewCount" ${state.searchAdvancedFilters.order === 'viewCount' ? 'selected' : ''}>Vistas</option>
+              <option value="rating" ${state.searchAdvancedFilters.order === 'rating' ? 'selected' : ''}>Puntuación</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:4px; font-weight:bold;">Duración:</label>
+            <select id="adv-duration" class="settings-select">
+              <option value="any" ${state.searchAdvancedFilters.duration === 'any' ? 'selected' : ''}>Cualquiera</option>
+              <option value="short" ${state.searchAdvancedFilters.duration === 'short' ? 'selected' : ''}>Corta (&lt; 4 min)</option>
+              <option value="medium" ${state.searchAdvancedFilters.duration === 'medium' ? 'selected' : ''}>Mediana (4-20 min)</option>
+              <option value="long" ${state.searchAdvancedFilters.duration === 'long' ? 'selected' : ''}>Larga (&gt; 20 min)</option>
+            </select>
+          </div>
+          <div>
+            <button id="apply-adv-filters" class="subscribe-btn" style="width:100%; margin-top:8px;">Aplicar Filtros</button>
+          </div>
+        </div>
+      `;
+
+      modal.body.appendChild(content);
+      
+      document.getElementById('apply-adv-filters').onclick = () => {
+        state.searchAdvancedFilters.order = document.getElementById('adv-order').value;
+        state.searchAdvancedFilters.duration = document.getElementById('adv-duration').value;
+        closeModal();
+        renderPage();
+      };
+    }
+
+    /* 5. PAGINA CANAL CON BANNER */
+    async function renderCanalPage(container) {
+      const banner = document.createElement('div');
+      banner.className = 'channel-banner-frame';
+      
+      if (state.currentChannelBanner) {
+        banner.style.backgroundImage = `url(${state.currentChannelBanner})`;
+      } else {
+        banner.style.background = 'linear-gradient(135deg, #1f1f1f 0%, #3a3a3a 100%)';
+      }
+      container.appendChild(banner);
+
+      if (state.currentChannelId && !state.simulatedMode) {
+        await fetchChannelBanner(state.currentChannelId);
+      }
+
+      const header = document.createElement('div');
+      header.className = 'channel-header-card';
+
+      const left = document.createElement('div');
+      left.className = 'channel-header-left';
+
+      const picContainer = document.createElement('div');
+      picContainer.className = 'profile-pic-container';
+      
+      const channelAvatar = state.channelAvatarsCache[state.currentChannelId] || state.currentChannelThumb;
+
+      if (channelAvatar) {
+        const img = document.createElement('img');
+        img.src = channelAvatar;
+        picContainer.appendChild(img);
+      } else {
+        const fallback = document.createElement('div');
+        fallback.className = 'profile-pic-fallback';
+        fallback.textContent = 'Foto de perfil';
+        picContainer.appendChild(fallback);
+      }
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'channel-header-name';
+      nameDiv.textContent = state.currentChannelName || 'Nombre del canal';
+      nameDiv.onclick = openChannelInfoModal;
+
+      left.appendChild(picContainer);
+      left.appendChild(nameDiv);
+
+      const subBtn = document.createElement('button');
+      const isSubbed = state.subscriptions.some(s => s.id === state.currentChannelId);
+      subBtn.className = `subscribe-btn ${isSubbed ? 'subscribed' : ''}`;
+      subBtn.textContent = isSubbed ? getTranslation('suscripto') : getTranslation('suscribirse');
+      subBtn.onclick = () => {
+        toggleSubscription({
+          id: state.currentChannelId,
+          name: state.currentChannelName,
+          thumbnail: channelAvatar || ''
+        });
+        renderPage();
+      };
+
+      header.appendChild(left);
+      header.appendChild(subBtn);
+      container.appendChild(header);
+
+      if (!state.simulatedMode && (!API_KEY || API_KEY === "INSERTA_TU_CLAVE_API_AQUI")) {
+        renderConnectionError(container);
+        return;
+      }
+
+      let videos = [];
+      if (state.simulatedMode) {
+        videos = generateMockVideos(12, `Subida de ${state.currentChannelName}`);
+      } else {
+        videos = await fetchYouTubeVideos('channel', 50, state.currentChannelId);
+      }
+
+      if (!videos) {
+        renderConnectionError(container);
+        return;
+      }
+
+      if (videos.length === 0) {
+        const noVid = document.createElement('div');
+        noVid.style.padding = '20px';
+        noVid.style.textAlign = 'center';
+        noVid.style.color = '#888';
+        noVid.textContent = 'Este canal no tiene videos disponibles.';
+        container.appendChild(noVid);
+        return;
+      }
+
+      videos.forEach(video => {
+        container.appendChild(createVideoCardElement(video));
+      });
+    }
+
+    async function openChannelInfoModal() {
+      const modal = createModal(getTranslation('detallesCanal'));
+      modal.body.textContent = 'Cargando datos del canal...';
+
+      let details = {
+        subscribers: '1,250,000',
+        uploads: '450',
+        views: '85,400,000',
+        region: 'México',
+        createdAt: '15/03/2018',
+        description: state.currentChannelDescription || 'Sin descripción disponible.'
+      };
+
+      if (!state.simulatedMode && API_KEY && API_KEY !== "INSERTA_TU_CLAVE_API_AQUI") {
+        try {
+          const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${state.currentChannelId}&key=${API_KEY}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.items && data.items.length > 0) {
+              const ch = data.items[0];
+              details = {
+                subscribers: parseInt(ch.statistics.subscriberCount || 0).toLocaleString(),
+                uploads: parseInt(ch.statistics.videoCount || 0).toLocaleString(),
+                views: parseInt(ch.statistics.viewCount || 0).toLocaleString(),
+                region: ch.snippet.country || 'No especificada',
+                createdAt: new Date(ch.snippet.publishedAt).toLocaleDateString(),
+                description: ch.snippet.description || 'Sin descripción disponible.'
+              };
+            }
+          }
+        } catch (e) {
+          console.error('Error al cargar datos del canal:', e);
+        }
+      }
+
+      modal.body.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
+          <div><strong>Canal:</strong> ${state.currentChannelName}</div>
+          <div><strong>Suscriptores:</strong> ${details.subscribers}</div>
+          <div><strong>Cantidad de subidas:</strong> ${details.uploads}</div>
+          <div><strong>Visitas totales:</strong> ${details.views}</div>
+          <div><strong>${getTranslation('region')}:</strong> ${details.region}</div>
+          <div><strong>${getTranslation('fechaNacimiento')}:</strong> ${details.createdAt}</div>
+          <hr style="border:0; border-top:1px solid #444; margin:8px 0;">
+          <div><strong>Descripción:</strong></div>
+          <div style="white-space:pre-wrap; color:#ddd; font-size:13px; max-height:150px; overflow-y:auto;">${details.description}</div>
+        </div>
+      `;
+    }
+
+    /* COMPONENTE: TARJETA DE VIDEO Y REPRODUCCIÓN ÚNICA */
+    function createVideoCardElement(video) {
+      const card = document.createElement('div');
+      card.className = 'video-card';
+
+      const topMeta = document.createElement('div');
+      topMeta.className = 'card-top-meta';
+
+      const picContainer = document.createElement('div');
+      picContainer.className = 'profile-pic-container';
+      picContainer.onclick = () => {
+        navigateTo('canal', {
+          channelId: video.channelId,
+          channelName: video.channelTitle,
+          channelThumb: video.channelThumb || ''
+        });
+      };
+
+      const avatarUrl = video.channelThumb || state.channelAvatarsCache[video.channelId];
+
+      if (avatarUrl) {
+        const img = document.createElement('img');
+        img.src = avatarUrl;
+        picContainer.appendChild(img);
+      } else {
+        const fallback = document.createElement('div');
+        fallback.className = 'profile-pic-fallback';
+        fallback.textContent = 'Foto de perfil';
+        picContainer.appendChild(fallback);
+      }
+
+      const metaDetails = document.createElement('div');
+      metaDetails.className = 'meta-details';
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'meta-title';
+      titleDiv.textContent = video.title || 'Nombre del video';
+
+      const subtextDiv = document.createElement('div');
+      subtextDiv.className = 'meta-subtext';
+      subtextDiv.textContent = `${video.channelTitle || 'Nombre del canal'} ${video.formattedDate || 'DD/MM/AAAA'} ${video.views || '0'} Visitas ${video.likes || '0'} Likes ${video.duration || '00:00:00'}`;
+
+      metaDetails.appendChild(titleDiv);
+      metaDetails.appendChild(subtextDiv);
+
+      topMeta.appendChild(picContainer);
+      topMeta.appendChild(metaDetails);
+
+      const mediaFrame = document.createElement('div');
+      mediaFrame.className = 'media-frame';
+
+      function createThumbnailView() {
+        const thumbView = document.createElement('div');
+        thumbView.className = 'thumbnail-view';
+        
+        if (video.thumbnailUrl && !state.simulatedMode) {
+          thumbView.style.backgroundImage = `url(${video.thumbnailUrl})`;
+        } else {
+          if (video.thumbnailUrl) {
+            thumbView.style.backgroundImage = `url(${video.thumbnailUrl})`;
+          }
+          const thumbTitle = document.createElement('div');
+          thumbTitle.className = 'thumbnail-title-bg';
+          thumbTitle.textContent = getTranslation('miniatura');
+          thumbView.appendChild(thumbTitle);
+        }
+
+        const playOverlay = document.createElement('div');
+        playOverlay.className = 'play-btn-overlay';
+        thumbView.appendChild(playOverlay);
+
+        thumbView.onclick = () => {
+          if (state.currentlyPlayingFrame && state.currentlyPlayingFrame !== mediaFrame) {
+            state.currentlyPlayingFrame.restoreThumb();
+          }
+
+          mediaFrame.innerHTML = '';
+          const iframe = document.createElement('iframe');
+          iframe.className = 'iframe-player';
+          iframe.src = video.embedUrl || `https://www.youtube.com/embed/${video.id}?autoplay=1`;
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+          iframe.allowFullscreen = true;
+          mediaFrame.appendChild(iframe);
+
+          state.currentlyPlayingFrame = mediaFrame;
+        };
+
+        return thumbView;
+      }
+
+      mediaFrame.restoreThumb = function() {
+        mediaFrame.innerHTML = '';
+        mediaFrame.appendChild(createThumbnailView());
+      };
+
+      mediaFrame.appendChild(createThumbnailView());
+
+      const descBox = document.createElement('div');
+      descBox.className = 'card-description-box';
+      descBox.textContent = video.description || 'Sin descripción disponible.';
+
+      const actionsBar = document.createElement('div');
+      actionsBar.className = 'card-actions';
+
+      const isFav = state.favorites.some(f => f.id === video.id);
+      const favBtn = document.createElement('button');
+      favBtn.className = `action-btn ${isFav ? 'active-favorite' : ''}`;
+      favBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        ${getTranslation('favorito')}
+      `;
+      favBtn.onclick = () => {
+        toggleFavorite(video);
+        favBtn.classList.toggle('active-favorite');
+      };
+
+      const commentsBtn = document.createElement('button');
+      commentsBtn.className = 'action-btn';
+      commentsBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        ${getTranslation('comentarios')}
+      `;
+      commentsBtn.onclick = () => openCommentsModal(video);
+
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'action-btn';
+      shareBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        ${getTranslation('compartir')}
+      `;
+      shareBtn.onclick = () => openShareModal(video);
+
+      const ytBtn = document.createElement('button');
+      ytBtn.className = 'action-btn';
+      ytBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+        ${getTranslation('verEnYoutube')}
+      `;
+      ytBtn.onclick = () => {
+        const url = video.youtubeUrl || `https://www.youtube.com/watch?v=${video.id}`;
+        window.open(url, '_blank');
+      };
+
+      actionsBar.appendChild(favBtn);
+      actionsBar.appendChild(commentsBtn);
+      actionsBar.appendChild(shareBtn);
+      actionsBar.appendChild(ytBtn);
+
+      card.appendChild(topMeta);
+      card.appendChild(mediaFrame);
+      card.appendChild(descBox);
+      card.appendChild(actionsBar);
+
+      return card;
+    }
+
+    /* OBTENCIÓN DE DATOS */
+    async function fetchYouTubeVideos(type, maxResults = 50, queryOrCat = '') {
+      try {
+        let endpoint = '';
+        if (type === 'mostPopular') {
+          endpoint = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&maxResults=${maxResults}&key=${API_KEY}`;
+        } else if (type === 'trending') {
+          if (queryOrCat === 'shorts') {
+            endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&q=%23shorts&type=video&videoDuration=short&key=${API_KEY}`;
+          } else if (queryOrCat === 'kids') {
+            endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&q=infantil%20caricaturas&type=video&key=${API_KEY}`;
+          } else {
+            let catId = '';
+            if (queryOrCat === 'musica') catId = '&videoCategoryId=10';
+            if (queryOrCat === 'videojuegos') catId = '&videoCategoryId=20';
+            if (queryOrCat === 'noticias') catId = '&videoCategoryId=25';
+            endpoint = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular${catId}&maxResults=${maxResults}&key=${API_KEY}`;
+          }
+        } else if (type === 'search') {
+          endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&q=${encodeURIComponent(queryOrCat)}&type=${state.searchAdvancedFilters.type}&order=${state.searchAdvancedFilters.order}&key=${API_KEY}`;
+        } else if (type === 'channel') {
+          endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${queryOrCat}&maxResults=${maxResults}&order=date&key=${API_KEY}`;
+        }
+
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+
+        const channelIdsToFetch = [];
+
+        const items = data.items.map(item => {
+          const id = item.id.videoId || item.id;
+          const snippet = item.snippet || {};
+          const stats = item.statistics || {};
+          const details = item.contentDetails || {};
+
+          if (snippet.channelId && !state.channelAvatarsCache[snippet.channelId]) {
+            channelIdsToFetch.push(snippet.channelId);
+          }
+
+          return {
+            id: id,
+            title: snippet.title || 'Nombre del video',
+            description: snippet.description || '',
+            channelId: snippet.channelId || '',
+            channelTitle: snippet.channelTitle || 'Nombre del canal',
+            publishedAt: snippet.publishedAt || '',
+            formattedDate: snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString() : 'DD/MM/AAAA',
+            views: stats.viewCount ? parseInt(stats.viewCount).toLocaleString() : '0',
+            likes: stats.likeCount ? parseInt(stats.likeCount).toLocaleString() : '0',
+            duration: details.duration ? formatISO8601Duration(details.duration) : '00:02:19',
+            thumbnailUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || '',
+            channelThumb: state.channelAvatarsCache[snippet.channelId] || '',
+            embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1`,
+            youtubeUrl: `https://www.youtube.com/watch?v=${id}`
+          };
+        });
+
+        if (channelIdsToFetch.length > 0) {
+          fetchChannelAvatars([...new Set(channelIdsToFetch)]);
+        }
+
+        return items;
+      } catch (err) {
+        console.error('Fetch error:', err);
+        return null;
+      }
+    }
+
+    async function fetchChannelBanner(channelId) {
+      if (!API_KEY || API_KEY === "INSERTA_TU_CLAVE_API_AQUI") return;
+      try {
+        const url = `https://www.googleapis.com/youtube/v3/channels?part=brandingSettings,snippet&id=${channelId}&key=${API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+          const ch = data.items[0];
+          const bSettings = ch.brandingSettings;
+          const bannerUrl = bSettings?.image?.bannerExternalUrl || bSettings?.image?.mobileBannerExternalUrl;
+          if (bannerUrl) {
+            state.currentChannelBanner = bannerUrl;
+            const bannerElement = document.querySelector('.channel-banner-frame');
+            if (bannerElement) {
+              bannerElement.style.backgroundImage = `url(${bannerUrl})`;
+            }
+          }
+          if (ch.snippet?.description) {
+            state.currentChannelDescription = ch.snippet.description;
+          }
+        }
+      } catch (e) {
+        console.error('Error al cargar banner:', e);
+      }
+    }
+
+    async function fetchChannelAvatars(channelIds) {
+      try {
+        const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(',')}&key=${API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        data.items.forEach(ch => {
+          const thumb = ch.snippet?.thumbnails?.default?.url;
+          if (thumb) {
+            state.channelAvatarsCache[ch.id] = thumb;
+          }
+        });
+      } catch (e) {
+        console.error('Error al cargar avatares:', e);
+      }
+    }
+
+    function formatISO8601Duration(isoDuration) {
+      const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!match) return '00:02:19';
+      const hours = (match[1] || 0).toString().padStart(2, '0');
+      const minutes = (match[2] || 0).toString().padStart(2, '0');
+      const seconds = (match[3] || 0).toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function renderConnectionError(container) {
+      container.innerHTML = `
+        <div class="error-container">
+          <h3 style="margin-bottom:8px;">${getTranslation('errorConexion')}</h3>
+          <p style="font-size:14px; color:#cccccc;">${getTranslation('errorConexionDesc')}</p>
+        </div>
+      `;
+    }
+
+    function toggleFavorite(video) {
+      const idx = state.favorites.findIndex(f => f.id === video.id);
+      if (idx >= 0) {
+        state.favorites.splice(idx, 1);
+      } else {
+        state.favorites.push(video);
+      }
+      saveStateToStorage();
+    }
+
+    function toggleSubscription(channel) {
+      const idx = state.subscriptions.findIndex(s => s.id === channel.id);
+      if (idx >= 0) {
+        state.subscriptions.splice(idx, 1);
+      } else {
+        state.subscriptions.push(channel);
+      }
+      saveStateToStorage();
+    }
+
+    function handleSearchKeyPress(e) {
+      if (e.key === 'Enter') {
+        const query = e.target.value.trim();
+        if (query) {
+          state.currentSearchQuery = query;
+          if (!state.searchHistory.includes(query)) {
+            state.searchHistory.push(query);
+            saveStateToStorage();
+          }
+          navigateTo('busqueda');
+        }
+      }
+    }
+
+    /* MODALES Y POPUPS */
+    function createModal(title, isLight = false) {
+      closeModal();
+
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+
+      const card = document.createElement('div');
+      card.className = `modal-card ${isLight ? 'light-theme' : ''}`;
+
+      const header = document.createElement('div');
+      header.className = 'modal-header';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = title;
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'modal-close-btn';
+      closeBtn.textContent = '✕';
+      closeBtn.onclick = closeModal;
+
+      header.appendChild(titleSpan);
+      header.appendChild(closeBtn);
+
+      const body = document.createElement('div');
+      body.className = 'modal-body';
+
+      card.appendChild(header);
+      card.appendChild(body);
+      overlay.appendChild(card);
+
+      document.getElementById('modal-container').appendChild(overlay);
+      document.getElementById('modal-container').style.display = 'block';
+
+      return { overlay, card, body };
+    }
+
+    function closeModal() {
+      const container = document.getElementById('modal-container');
+      container.innerHTML = '';
+      container.style.display = 'none';
+    }
+
+    function toggleHeaderMenu() {
+      const modal = createModal('Menú Principal');
+
+      const menuList = document.createElement('div');
+      menuList.style.display = 'flex';
+      menuList.style.flexDirection = 'column';
+      menuList.style.gap = '10px';
+
+      const btnHelp = document.createElement('button');
+      btnHelp.className = 'category-row-btn';
+      btnHelp.textContent = getTranslation('ayuda');
+      btnHelp.onclick = () => { closeModal(); openHelpPage(); };
+
+      const btnSettings = document.createElement('button');
+      btnSettings.className = 'category-row-btn';
+      btnSettings.textContent = getTranslation('configuracion');
+      btnSettings.onclick = () => { closeModal(); openSettingsPage(); };
+
+      const btnPrivacy = document.createElement('button');
+      btnPrivacy.className = 'category-row-btn';
+      btnPrivacy.textContent = getTranslation('politica');
+      btnPrivacy.onclick = () => { closeModal(); openPrivacyPage(); };
+
+      menuList.appendChild(btnHelp);
+      menuList.appendChild(btnSettings);
+      menuList.appendChild(btnPrivacy);
+
+      modal.body.appendChild(menuList);
+    }
+
+    function openHelpPage() {
+      const modal = createModal(getTranslation('ayuda'), true);
+
+      modal.body.innerHTML = `
+        <div style="font-size:14px; color:#222;">
+          <h3 style="margin-bottom:8px;">Guía de Usuario y Funcionalidades</h3>
+          <p style="margin-bottom:12px;">Manual para usuarios:</p>
+          <p style="margin-bottom:8px;">• Revisa la descripción directamente abajo de cada reproductor/miniatura.</p>
+          <p style="margin-bottom:8px;">• En la página del canal toca su nombre para ver estadísticas extendidas y su descripción.</p>
+          <p style="margin-bottom:8px;">• En la Biblioteca puedes exportar e importar tus suscripciones en formato JSON.</p>
+        </div>
+      `;
+    }
+
+    function openSettingsPage() {
+      const modal = createModal(getTranslation('configuracion'), true);
+
+      const languages = [
+        { code: 'zu', name: 'IsiZulu' },
+        { code: 'id', name: 'Bahasa Indonesia' },
+        { code: 'af', name: 'Afrikaans' },
+        { code: 'ca', name: 'Català' },
+        { code: 'nah', name: 'Nāhuatl' },
+        { code: 'pl', name: 'Polski' },
+        { code: 'tl', name: 'Tagalog' },
+        { code: 'tr', name: 'Türkçe' },
+        { code: 'sv', name: 'Svenska' },
+        { code: 'pt_BR', name: 'Português Brasileiro' },
+        { code: 'pt_PT', name: 'Português Europeu' },
+        { code: 'es_ES', name: 'Español Castellano' },
+        { code: 'es_MX', name: 'Español Mexicano' },
+        { code: 'es_AR', name: 'Español Argentino' },
+        { code: 'fr_CA', name: 'Français Canadien' },
+        { code: 'fr_FR', name: 'Français Européen' },
+        { code: 'cs_CZ', name: 'Čeština' },
+        { code: 'de_DE', name: 'Deutsch' },
+        { code: 'en_GB', name: 'English (UK)' },
+        { code: 'en_US', name: 'English (US)' },
+        { code: 'en_AU', name: 'English (Australia)' },
+        { code: 'da_DK', name: 'Dansk' },
+        { code: 'it_IT', name: 'Italiano' },
+        { code: 'nl_NL', name: 'Nederlands' },
+        { code: 'eo', name: 'Esperanto' },
+        { code: 'ru_RU', name: 'Русский' },
+        { code: 'el_GR', name: 'Ελληνικά' },
+        { code: 'ar', name: 'العربية' },
+        { code: 'ja_JP', name: '日本語' },
+        { code: 'hi_IN', name: 'हिन्दी' },
+        { code: 'he_IL', name: 'עברית' },
+        { code: 'ko_KR', name: '한국어' },
+        { code: 'th_TH', name: 'ไทย' },
+        { code: 'zh_CN', name: '中文 (简体)' },
+        { code: 'zh_TW', name: '中文 (繁體)' }
+      ];
+
+      const langOptionsHtml = languages.map(l => 
+        `<option value="${l.code}" ${state.language === l.code ? 'selected' : ''}>${l.name}</option>`
+      ).join('');
+
+      modal.body.innerHTML = `
+        <div class="settings-option-group">
+          <label for="setting-lang">${getTranslation('idiomaApp')}</label>
+          <select id="setting-lang" class="settings-select">
+            ${langOptionsHtml}
+          </select>
+        </div>
+
+        <div class="settings-option-group" style="margin-top:16px;">
+          <label>${getTranslation('historialBusqueda')}</label>
+          <button id="btn-clear-history" class="btn-danger">${getTranslation('borrarHistorial')}</button>
+        </div>
+
+        <div class="settings-option-group" style="margin-top:16px;">
+          <label class="toggle-checkbox-label">
+            <input type="checkbox" id="setting-simulated" ${state.simulatedMode ? 'checked' : ''}>
+            <span>${getTranslation('modoSimulado')}</span>
+          </label>
+          <p style="font-size:11px; color:#666; margin-top:4px;">
+            ${getTranslation('modoSimuladoDesc')}
+          </p>
+        </div>
+      `;
+
+      document.getElementById('setting-lang').onchange = (e) => {
+        state.language = e.target.value;
+        saveStateToStorage();
+        closeModal();
+        renderPage();
+      };
+
+      document.getElementById('setting-simulated').onchange = (e) => {
+        state.simulatedMode = e.target.checked;
+        saveStateToStorage();
+        closeModal();
+        renderPage();
+      };
+
+      document.getElementById('btn-clear-history').onclick = () => {
+        openConfirmModal('¿Está seguro de que desea borrar todo el historial de búsqueda?', () => {
+          state.searchHistory = [];
+          saveStateToStorage();
+          alert('Historial borrado.');
+        });
+      };
+    }
+
+    function openPrivacyPage() {
+      const modal = createModal(getTranslation('politica'), true);
+      modal.body.innerHTML = `
+        <div style="font-size:13px; color:#222; line-height:1.6;">
+          <h3 style="margin-bottom:8px;">Aviso Legal</h3>
+          <p style="margin-bottom:12px; font-weight:bold; color:#cc0000;">
+            Esta aplicación web NO está afiliada con YouTube ni Google LLC.
+          </p>
+        </div>
+      `;
+    }
+
+    function openConfirmModal(message, onConfirm) {
+      const modal = createModal('Confirmación');
+      const p = document.createElement('p');
+      p.textContent = message;
+      p.style.marginBottom = '16px';
+
+      const flex = document.createElement('div');
+      flex.style.display = 'flex';
+      flex.style.justifyContent = 'flex-end';
+      flex.style.gap = '8px';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-secondary';
+      cancelBtn.textContent = 'Cancelar';
+      cancelBtn.onclick = closeModal;
+
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-danger';
+      okBtn.textContent = 'Confirmar';
+      okBtn.onclick = () => {
+        closeModal();
+        onConfirm();
+      };
+
+      flex.appendChild(cancelBtn);
+      flex.appendChild(okBtn);
+
+      modal.body.appendChild(p);
+      modal.body.appendChild(flex);
+    }
+
+    async function openCommentsModal(video) {
+      const modal = createModal(`${getTranslation('comentarios')} - ${video.title.substring(0, 20)}...`);
+      const listDiv = document.createElement('div');
+      listDiv.className = 'comments-list';
+      listDiv.textContent = 'Cargando comentarios...';
+
+      modal.body.appendChild(listDiv);
+
+      let comments = [];
+
+      if (!state.simulatedMode && API_KEY && API_KEY !== "INSERTA_TU_CLAVE_API_AQUI") {
+        try {
+          const url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${video.id}&maxResults=25&key=${API_KEY}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            comments = data.items.map(item => ({
+              author: item.snippet.topLevelComment.snippet.authorDisplayName,
+              text: item.snippet.topLevelComment.snippet.textDisplay
+            }));
+          }
+        } catch (e) {
+          console.error('Error al cargar comentarios reales:', e);
+        }
+      }
+
+      if (comments.length === 0) {
+        comments = [
+          { author: 'Usuario_Tech', text: '¡Excelente contenido y calidad!' },
+          { author: 'Gamer_2026', text: 'Muy buen video.' }
+        ];
+      }
+
+      listDiv.innerHTML = '';
+      comments.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        const author = document.createElement('div');
+        author.className = 'comment-author';
+        author.textContent = c.author;
+        const text = document.createElement('div');
+        text.innerHTML = c.text;
+        item.appendChild(author);
+        item.appendChild(text);
+        listDiv.appendChild(item);
+      });
+    }
+
+    function openShareModal(video) {
+      const modal = createModal(getTranslation('compartir'));
+      const url = video.youtubeUrl || `https://www.youtube.com/watch?v=${video.id}`;
+
+      const grid = document.createElement('div');
+      grid.className = 'share-grid';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'share-option-btn';
+      copyBtn.textContent = 'Copiar enlace';
+      copyBtn.onclick = () => {
+        const tempInput = document.createElement('input');
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        alert('Enlace copiado.');
+      };
+
+      const waBtn = document.createElement('button');
+      waBtn.className = 'share-option-btn';
+      waBtn.textContent = 'WhatsApp';
+      waBtn.onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`, '_blank');
+
+      const fbBtn = document.createElement('button');
+      fbBtn.className = 'share-option-btn';
+      fbBtn.textContent = 'Facebook';
+      fbBtn.onclick = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+
+      const teamsBtn = document.createElement('button');
+      teamsBtn.className = 'share-option-btn';
+      teamsBtn.textContent = 'Microsoft Teams';
+      teamsBtn.onclick = () => window.open(`https://teams.microsoft.com/share?href=${encodeURIComponent(url)}`, '_blank');
+
+      const mailBtn = document.createElement('button');
+      mailBtn.className = 'share-option-btn';
+      mailBtn.textContent = 'Correo electrónico';
+      mailBtn.onclick = () => window.open(`mailto:?subject=${encodeURIComponent(video.title)}&body=${encodeURIComponent(url)}`, '_blank');
+
+      grid.appendChild(copyBtn);
+      grid.appendChild(waBtn);
+      grid.appendChild(fbBtn);
+      grid.appendChild(teamsBtn);
+      grid.appendChild(mailBtn);
+
+      modal.body.appendChild(grid);
+    }
+  </script>
+</body>
+</html>
