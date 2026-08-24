@@ -24,6 +24,8 @@ git clone https://github.com/angelgtz6249/UYC.git
 
 Then open the index.html file and enjoy
 
-3. APK, AppImage, MSI and UWP coming soon
+3.Download the APK from the GitHub releases page
+
+4.AppImage, MSI and UWP coming soon
 
 A project licensed under Creative Commons Zero 1.0, so you can do whatever you want with it—provided you don't do anything weird; I know you guys.
